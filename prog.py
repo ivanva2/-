@@ -1,5 +1,7 @@
 
 import psycopg2
+from tkinter import ttk
+from tkinter import *
 from psycopg2 import Error
 
 try:
@@ -30,3 +32,31 @@ finally:
         cursor.close()
         connection.close()
         print("Соединение с PostgreSQL закрыто")
+class Dictionary:
+    def __init__(self, window):
+
+        self.wind = window
+        self.wind.title('Строймагазин')
+
+        
+        frame = LabelFrame(self.wind, text = 'Введите новый вид матерьяла')
+        frame.grid(row = 0, column = 0, columnspan = 3, pady = 20)
+        Label(frame, text = 'id: ').grid(row = 1, column = 0)
+        self.word = Entry(frame)
+        self.word.focus()
+        self.word.grid(row = 1, column = 1)
+        Label(frame, text = 'Вид матерьяла: ').grid(row = 2, column = 0)
+        self.meaning = Entry(frame)
+        self.meaning.grid(row = 2, column = 1)
+        ttk.Button(frame, text = 'Сохранить', ).grid(row = 3, columnspan = 2, sticky = W + E)
+        self.message = Label(text = '', fg = 'green')
+        self.message.grid(row = 3, column = 0, columnspan = 2, sticky = W + E)
+        # таблица слов и значений
+        self.tree = ttk.Treeview(height = 10, columns = 2)
+        self.tree.grid(row = 4, column = 0, columnspan = 2)
+        self.tree.heading('#0', text = 'id', anchor = CENTER)
+        self.tree.heading('#1', text = 'Вид матерьяла', anchor = CENTER)
+if __name__ == '__main__':
+    window = Tk()
+    application = Dictionary(window)
+    window.mainloop()
