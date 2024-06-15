@@ -56,6 +56,23 @@ class Dictionary:
         self.tree.grid(row = 4, column = 0, columnspan = 2)
         self.tree.heading('#0', text = 'id', anchor = CENTER)
         self.tree.heading('#1', text = 'Вид матерьяла', anchor = CENTER)
+    def on_exit(self):
+        if messagebox.askyesno("Выйти", "Закрыть программу?"):
+            self.wind.destroy()
+    def run_query(self, query, parameters = ()):
+        connection = psycopg2.connect(
+                                  host="localhost",
+                                  user="postgres",
+                                  # пароль, который указали при установке PostgreSQL
+                                  password="0",
+                                  port="5432",
+                                  database="stroi")
+    # Курсор для выполнения операций с базой данных
+        cursor = connection.cursor()
+        result = cursor.execute(query, parameters)
+        connection.commit()
+        return result
+    
 if __name__ == '__main__':
     window = Tk()
     application = Dictionary(window)
