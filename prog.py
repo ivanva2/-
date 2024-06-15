@@ -58,6 +58,8 @@ class Dictionary:
         self.tree.grid(row = 4, column = 0, columnspan = 2)
         self.tree.heading('#0', text = 'id', anchor = CENTER)
         self.tree.heading('#1', text = 'Вид матерьяла', anchor = CENTER)
+        ttk.Button(text = 'Удалить', command = self.delete_word).grid(row = 5, column = 0, sticky = W + E)
+        ttk.Button(text = 'Изменить',).grid(row = 5, column = 1, sticky = W + E)
         self.get_words()
         
    
@@ -98,6 +100,19 @@ class Dictionary:
             self.meaning.delete(0, END)
         else:
             self.message['text'] = 'введите слово и значение'
+        self.get_words()
+    def delete_word(self):
+        self.message['text'] = ''
+        try:
+            self.tree.item(self.tree.selection())['text']
+        except IndexError as e:
+            self.message['text'] = 'Выберите слово, которое нужно удалить'
+            return
+        self.message['text'] = ''
+        typeofmaterial= self.tree.item(self.tree.selection())['text']
+        query = f'DELETE FROM typesofmaterials WHERE id = {typeofmaterial}'
+        self.run_query(query,False, )
+        self.message['text'] = 'Слово {} успешно удалено'.format(typeofmaterial)
         self.get_words()
     
     
