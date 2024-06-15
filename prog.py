@@ -50,7 +50,7 @@ class Dictionary:
         Label(frame, text = 'Вид матерьяла: ').grid(row = 2, column = 0)
         self.meaning = Entry(frame)
         self.meaning.grid(row = 2, column = 1)
-        ttk.Button(frame, text = 'Сохранить', ).grid(row = 3, columnspan = 2, sticky = W + E)
+        ttk.Button(frame, text = 'Сохранить', command = self.add_word).grid(row = 3, columnspan = 2, sticky = W + E)
         self.message = Label(text = '', fg = 'green')
         self.message.grid(row = 3, column = 0, columnspan = 2, sticky = W + E)
         # таблица слов и значений
@@ -61,7 +61,7 @@ class Dictionary:
         self.get_words()
         
    
-    def run_query(self, query, parameters = ()):
+    def run_query(self, query,a, parameters = ()):
         connection = psycopg2.connect(
                                   host="localhost",
                                   user="postgres",
@@ -71,17 +71,34 @@ class Dictionary:
                                   database="stroi")
     # Курсор для выполнения операций с базой данных
         cursor = connection.cursor()
-        result = cursor.execute(query, parameters)
-        cursor.execute(query)
-        record = cursor.fetchall()
+        cursor.execute(query, parameters)
+        if a:
+            record = cursor.fetchall()
         connection.commit()
-        return record 
+        if a:
+            return record 
     def get_words(self):
+        records = self.tree.get_children()
+        for element in records:
+            self.tree.delete(element)
         query = 'SELECT * FROM typesofmaterials;'
-        db_rows = self.run_query(query)
-        # формирование словаря из перемешанных в случайном порядке слов и их значений
+        db_rows = self.run_query(query,TRUE)
         for row in db_rows:
             self.tree.insert('', 0, text = row[0], values = row[1])
+     # валидация ввода
+    def validation(self):
+        return len(self.word.get()) != 0 and len(self.meaning.get()) != 0
+    # добавление нового слова
+    def add_word(self):
+        if self.validation():
+            query = f""" INSERT INTO typesofmaterials (id, typeofmaterial) VALUES({self.word.get()},'{self.meaning.get()}')"""
+            self.run_query(query,False)
+            self.message['text'] = 'Вид матерьяла {} добавлено в таблицу'.format(self.meaning.get())
+            self.word.delete(0, END)
+            self.meaning.delete(0, END)
+        else:
+            self.message['text'] = 'введите слово и значение'
+        self.get_words()
     
     
 if __name__ == '__main__':
