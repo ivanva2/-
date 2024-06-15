@@ -4,6 +4,7 @@ from tkinter import ttk
 from tkinter import *
 from psycopg2 import Error
 
+
 try:
     # Подключение к существующей базе данных
     connection = psycopg2.connect(
@@ -20,18 +21,19 @@ try:
     print("Информация о сервере PostgreSQL")
     print(connection.get_dsn_parameters(), "\n")
     # Выполнение SQL-запроса
-    cursor.execute("SELECT version();")
+    
+    cursor.execute("SELECT * FROM typesofmaterials;")
     # Получить результат
     record = cursor.fetchone()
     print("Вы подключены к - ", record, "\n")
 
 except (Exception, Error) as error:
     print("Ошибка при работе с PostgreSQL", error)
-finally:
-    if connection:
-        cursor.close()
-        connection.close()
-        print("Соединение с PostgreSQL закрыто")
+#finally:
+   # if connection:
+       # cursor.close()
+       # connection.close()
+       # print("Соединение с PostgreSQL закрыто")
 class Dictionary:
     def __init__(self, window):
 
@@ -56,9 +58,9 @@ class Dictionary:
         self.tree.grid(row = 4, column = 0, columnspan = 2)
         self.tree.heading('#0', text = 'id', anchor = CENTER)
         self.tree.heading('#1', text = 'Вид матерьяла', anchor = CENTER)
-    def on_exit(self):
-        if messagebox.askyesno("Выйти", "Закрыть программу?"):
-            self.wind.destroy()
+        self.get_words()
+        
+   
     def run_query(self, query, parameters = ()):
         connection = psycopg2.connect(
                                   host="localhost",
@@ -70,8 +72,17 @@ class Dictionary:
     # Курсор для выполнения операций с базой данных
         cursor = connection.cursor()
         result = cursor.execute(query, parameters)
+        cursor.execute(query)
+        record = cursor.fetchall()
         connection.commit()
-        return result
+        return record 
+    def get_words(self):
+        query = 'SELECT * FROM typesofmaterials;'
+        db_rows = self.run_query(query)
+        # формирование словаря из перемешанных в случайном порядке слов и их значений
+        for row in db_rows:
+            self.tree.insert('', 0, text = row[0], values = row[1])
+    
     
 if __name__ == '__main__':
     window = Tk()
