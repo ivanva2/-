@@ -5,35 +5,7 @@ from tkinter import *
 from psycopg2 import Error
 
 
-try:
-    # Подключение к существующей базе данных
-    connection = psycopg2.connect(
-                                  host="localhost",
-                                  user="postgres",
-                                  # пароль, который указали при установке PostgreSQL
-                                  password="0",
-                                  port="5432",
-                                  database="stroi")
 
-    # Курсор для выполнения операций с базой данных
-    cursor = connection.cursor()
-    # Распечатать сведения о PostgreSQL
-    print("Информация о сервере PostgreSQL")
-    print(connection.get_dsn_parameters(), "\n")
-    # Выполнение SQL-запроса
-    
-    cursor.execute("SELECT * FROM typesofmaterials;")
-    # Получить результат
-    record = cursor.fetchone()
-    print("Вы подключены к - ", record, "\n")
-
-except (Exception, Error) as error:
-    print("Ошибка при работе с PostgreSQL", error)
-#finally:
-   # if connection:
-       # cursor.close()
-       # connection.close()
-       # print("Соединение с PostgreSQL закрыто")
 class Dictionary:
     def __init__(self, window):
 
@@ -51,15 +23,21 @@ class Dictionary:
         self.meaning = Entry(frame)
         self.meaning.grid(row = 2, column = 1)
         ttk.Button(frame, text = 'Сохранить', command = self.add_word).grid(row = 3, columnspan = 2, sticky = W + E)
+        
+        Label( text = 'поиск ').grid(row = 5, column = 0)
+        self.meaning = Entry()
+        self.meaning.grid(row = 5, column = 1)
+
         self.message = Label(text = '', fg = 'green')
-        self.message.grid(row = 3, column = 0, columnspan = 2, sticky = W + E)
+        self.message.grid(row = 6, column = 0, columnspan = 2, sticky = W + E)
         # таблица слов и значений
+
         self.tree = ttk.Treeview(height = 10, columns = 2)
-        self.tree.grid(row = 4, column = 0, columnspan = 2)
+        self.tree.grid(row = 7, column = 0, columnspan = 2)
         self.tree.heading('#0', text = 'id', anchor = CENTER)
         self.tree.heading('#1', text = 'Вид матерьяла', anchor = CENTER)
-        ttk.Button(text = 'Удалить', command = self.delete_word).grid(row = 5, column = 0, sticky = W + E)
-        ttk.Button(text = 'Изменить',command=self.edit_word).grid(row = 5, column = 1, sticky = W + E)
+        ttk.Button(text = 'Удалить', command = self.delete_word).grid(row = 8, column = 0, sticky = W + E)
+        ttk.Button(text = 'Изменить',command=self.edit_word).grid(row = 8, column = 1, sticky = W + E)
         self.get_words()
         
    
@@ -154,6 +132,9 @@ class Dictionary:
         self.edit_wind.destroy()
         self.message['text'] = 'слово {} успешно изменено'.format(word)
         self.get_words()
+    def poisk(self,word):
+        m
+
     
     
 if __name__ == '__main__':
