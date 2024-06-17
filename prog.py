@@ -7,23 +7,25 @@ from psycopg2 import Error
 
 
 class Dictionary:
+    global a
+    a=1
     def __init__(self, window):
-
+        
+        
         self.wind = window
         self.wind.title('Строймагазин')
+        main_menu = Menu()
+        file_menu = Menu()
+        
+        
+        file_menu.add_command(label="Вид матерьяла",command = lambda: self.click_vid())
+        file_menu.add_command(label="Матерьялы",command=lambda: self.click_mat())
+        file_menu.add_separator()
 
         
-        frame = LabelFrame(self.wind, text = 'Введите новый вид матерьяла')
-        frame.grid(row = 0, column = 0, columnspan = 3, pady = 20)
-        Label(frame, text = 'id: ').grid(row = 1, column = 0)
-        self.word = Entry(frame)
-        self.word.focus()
-        self.word.grid(row = 1, column = 1)
-        Label(frame, text = 'Вид матерьяла: ').grid(row = 2, column = 0)
-        self.meaning = Entry(frame)
-        self.meaning.grid(row = 2, column = 1)
-        ttk.Button(frame, text = 'Сохранить', command = self.add_word).grid(row = 3, columnspan = 2, sticky = W + E)
-        
+        main_menu.add_cascade(label="таблицы", menu=file_menu)
+        main_menu.add_cascade(label="новое",command = lambda: self.novoe())
+        window.config(menu=main_menu)
         ttk.Button( text = 'поиск',command=self.poisk).grid(row = 5, column = 0, sticky = W + E)
         self.poiskk = Entry()
         self.poiskk.focus()
@@ -32,14 +34,46 @@ class Dictionary:
         self.message = Label(text = '', fg = 'green')
         self.message.grid(row = 6, column = 0, columnspan = 2, sticky = W + E)
         # таблица слов и значений
-
         self.tree = ttk.Treeview(height = 10, columns = 2)
         self.tree.grid(row = 7, column = 0, columnspan = 2)
         self.tree.heading('#0', text = 'id', anchor = CENTER)
         self.tree.heading('#1', text = 'Вид матерьяла', anchor = CENTER)
+        
         ttk.Button(text = 'Удалить', command = self.delete_word).grid(row = 8, column = 0, sticky = W + E)
         ttk.Button(text = 'Изменить',command=self.edit_word).grid(row = 8, column = 1, sticky = W + E)
         self.get_words()
+    def click_mat(self):
+        global a
+        a = 2
+        self.tree.destroy()
+        self.tree = ttk.Treeview(height=10, columns=('размер', 'Характеристика', 'количество', 'Вид матерьяла'))
+        self.tree.grid(row=7, column=0, columnspan=5)
+        
+        self.tree.heading('#0', text = 'id', anchor = CENTER)
+        self.tree.heading('#1', text = 'размер', anchor = CENTER)
+        self.tree.heading('#2', text = 'Характеристика', anchor = CENTER)
+        self.tree.heading('#3', text = 'количество', anchor = CENTER)
+        self.tree.heading('#4', text = 'Вид матерьяла', anchor = CENTER)
+        window.update()
+        window.update_idletasks()
+        self.get_words()
+        return a
+    def click_vid(self):
+        global a
+        a = 1
+        self.tree.destroy()
+        self.tree = ttk.Treeview(height = 10, columns = 2)
+        self.tree.grid(row = 7, column = 0, columnspan = 2)
+        self.tree.heading('#0', text = 'id', anchor = CENTER)
+        self.tree.heading('#1', text = 'Вид матерьяла', anchor = CENTER)
+        window.update()
+        window.update_idletasks()
+        self.get_words()
+        return a
+
+        
+
+        
         
    
     def run_query(self, query,a, parameters = ()):
@@ -62,21 +96,37 @@ class Dictionary:
         records = self.tree.get_children()
         for element in records:
             self.tree.delete(element)
-        query = 'SELECT * FROM typesofmaterials;'
+        global a
+        if a==1:
+            query = 'SELECT * FROM typesofmaterials;'
+        if a==2:
+            query = 'SELECT * FROM materials;'
         db_rows = self.run_query(query,TRUE)
         for row in db_rows:
-            self.tree.insert('', 0, text = row[0], values = row[1])
+            if a==1:
+                self.tree.insert('', 0, text = row[0], values = row[1])
+            if a==2:
+                self.tree.insert('', 0, text=row[0], values=(row[1], row[2], row[3], row[4]))
      # валидация ввода
     def validation(self):
         return len(self.word.get()) != 0 and len(self.meaning.get()) != 0
     # добавление нового слова
     def add_word(self):
         if self.validation():
-            query = f""" INSERT INTO typesofmaterials (id, typeofmaterial) VALUES({self.word.get()},'{self.meaning.get()}')"""
+            global a
+            if a==1:
+                query = f""" INSERT INTO typesofmaterials (id, typeofmaterial) VALUES({self.word.get()},'{self.meaning.get()}')"""
+            if a==2:
+                query = f""" INSERT INTO materials (id, size, characteristic, quantity, material_id) VALUES({self.word.get()},'{self.meaning.get()}','{self.xarkt.get()}',{self.kol.get()},{self.vidd.get()})"""
             self.run_query(query,False)
             self.message['text'] = 'Вид матерьяла {} добавлено в таблицу'.format(self.meaning.get())
             self.word.delete(0, END)
             self.meaning.delete(0, END)
+            if a==2:
+                self.xarkt.delete(0, END)
+                self.kol.delete(0, END)
+                self.vidd.delete(0, END)
+
         else:
             self.message['text'] = 'введите слово и значение'
         self.get_words()
@@ -125,6 +175,44 @@ class Dictionary:
 
         Button(self.edit_wind, text = 'Изменить', command = lambda: self.edit_records(new_word.get(), word, new_meaning.get(), old_meaning)).grid(row = 4, column = 2, sticky = W)
         self.edit_wind.mainloop()
+    #новое
+    def novoe(self):
+        self.message['text'] = ''
+        self.edit_wind = Toplevel()
+        self.edit_wind.title = 'Добавить новое значение'
+        global a
+        if a==1:
+
+            frame = LabelFrame(self.edit_wind, text = 'Введите новый вид матерьяла')
+            frame.grid(row = 0, column = 0, columnspan = 3, pady = 20)
+            Label(frame, text = 'id: ').grid(row = 1, column = 0)
+            self.word = Entry(frame)
+            self.word.focus()
+            self.word.grid(row = 1, column = 1)
+            Label(frame, text = 'Вид матерьяла: ').grid(row = 2, column = 0)
+            self.meaning = Entry(frame)
+            self.meaning.grid(row = 2, column = 1)
+            ttk.Button(frame, text = 'Сохранить', command = self.add_word).grid(row = 3, columnspan = 2, sticky = W + E)
+        if a==2:
+            frame = LabelFrame(self.edit_wind, text = 'Введите новый вид матерьяла')
+            frame.grid(row = 0, column = 0, columnspan = 3, pady = 20)
+            Label(frame, text = 'id: ').grid(row = 1, column = 0)
+            self.word = Entry(frame)
+            self.word.focus()
+            self.word.grid(row = 1, column = 1)
+            Label(frame, text = 'размер: ').grid(row = 2, column = 0)
+            self.meaning = Entry(frame)
+            self.meaning.grid(row = 2, column = 1)
+            Label(frame, text = 'Характеристика: ').grid(row = 3, column = 0)
+            self.xarkt = Entry(frame)
+            self.xarkt.grid(row = 3, column = 1)
+            Label(frame, text = 'количество: ').grid(row = 4, column = 0)
+            self.kol = Entry(frame)
+            self.kol.grid(row = 4, column = 1)
+            Label(frame, text = 'Вид матерьяла: ').grid(row = 5, column = 0)
+            self.vidd = Entry(frame)
+            self.vidd.grid(row = 5, column = 1)
+            ttk.Button(frame, text = 'Сохранить', command = self.add_word).grid(row = 6, columnspan = 2, sticky = W + E)
     # внесение изменений в базу
     def edit_records(self, new_word, word, new_meaning, old_meaning):
         query = f"""UPDATE typesofmaterials SET id = {new_word}, typeofmaterial = '{new_meaning}'WHERE id = {word} AND typeofmaterial = '{old_meaning}'"""
