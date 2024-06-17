@@ -24,9 +24,10 @@ class Dictionary:
         self.meaning.grid(row = 2, column = 1)
         ttk.Button(frame, text = 'Сохранить', command = self.add_word).grid(row = 3, columnspan = 2, sticky = W + E)
         
-        Label( text = 'поиск ').grid(row = 5, column = 0)
-        self.meaning = Entry()
-        self.meaning.grid(row = 5, column = 1)
+        ttk.Button( text = 'поиск',command=self.poisk).grid(row = 5, column = 0, sticky = W + E)
+        self.poiskk = Entry()
+        self.poiskk.focus()
+        self.poiskk.grid(row = 5, column = 1)
 
         self.message = Label(text = '', fg = 'green')
         self.message.grid(row = 6, column = 0, columnspan = 2, sticky = W + E)
@@ -132,9 +133,18 @@ class Dictionary:
         self.edit_wind.destroy()
         self.message['text'] = 'слово {} успешно изменено'.format(word)
         self.get_words()
-    def poisk(self,word):
-        m
-
+    def poisk(self):
+        records = self.tree.get_children()
+        for element in records:
+            self.tree.delete(element)
+        x=self.poiskk.get()
+        if x.isdigit():
+            query=f"""SELECT * FROM typesofmaterials WHERE id = {self.poiskk.get()}  """
+        else:
+            query=f"""SELECT * FROM typesofmaterials WHERE  typeofmaterial = '{self.poiskk.get()}' """
+        db_rows = self.run_query(query,TRUE)
+        for row in db_rows:
+            self.tree.insert('', 0, text = row[0], values = row[1])
     
     
 if __name__ == '__main__':
