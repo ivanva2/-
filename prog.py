@@ -1,9 +1,30 @@
 
 import psycopg2
 from tkinter import ttk
+from tkinter import messagebox, Menu, ttk, Label, Entry
 from tkinter import *
+import hashlib
 from psycopg2 import Error
 
+class LoginWindow:
+    def __init__(self, parent):
+        self.parent = parent
+        self.window = Toplevel(parent.wind)
+        self.window.title("Вход в систему")
+
+        ttk.Label(self.window, text="Имя пользователя").grid(row=0)
+        ttk.Label(self.window, text="Пароль").grid(row=1)
+
+        self.username_entry = ttk.Entry(self.window)
+        self.password_entry = ttk.Entry(self.window, show="*")
+
+        self.username_entry.grid(row=0, column=1)
+        self.password_entry.grid(row=1, column=1)
+
+        ttk.Button(self.window, text="Войти", ).grid(row=2, column=1)
+        ttk.Button(self.window, text="Регистрация", ).grid(row=3, column=1)
+    def hash_password(password):
+        return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 
 class Dictionary:
@@ -16,7 +37,7 @@ class Dictionary:
         self.wind.title('Строймагазин')
         main_menu = Menu()
         file_menu = Menu()
-        
+        self.login_window = LoginWindow(self)
         
         file_menu.add_command(label="Вид матерьяла",command = lambda: self.click_vid())
         file_menu.add_command(label="Матерьялы",command=lambda: self.click_mat())
@@ -303,6 +324,9 @@ class Dictionary:
         self.edit_wind.destroy()
         self.message['text'] = 'мательял {} успешно изменен'.format(new_characteristic)
         self.get_words()
+    
+
+        
 if __name__ == '__main__':
     window = Tk()
     application = Dictionary(window)
