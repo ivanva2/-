@@ -5,7 +5,8 @@ from tkinter import messagebox, Menu, ttk, Label, Entry
 from tkinter import *
 import hashlib
 from psycopg2 import Error
-
+def hash_password(password):
+        return hashlib.sha256(password.encode('utf-8')).hexdigest()
 class LoginWindow:
     def __init__(self, parent):
         self.parent = parent
@@ -21,10 +22,51 @@ class LoginWindow:
         self.username_entry.grid(row=0, column=1)
         self.password_entry.grid(row=1, column=1)
 
-        ttk.Button(self.window, text="Войти", ).grid(row=2, column=1)
-        ttk.Button(self.window, text="Регистрация", ).grid(row=3, column=1)
-    def hash_password(password):
-        return hashlib.sha256(password.encode('utf-8')).hexdigest()
+        ttk.Button(self.window, text="Войти",command=self.attempt_login ).grid(row=2, column=1)
+        ttk.Button(self.window, text="Регистрация",command=self.register ).grid(row=3, column=1)
+    
+    def attempt_login(self):
+        username = self.username_entry.get()
+        password = hash_password(self.password_entry.get())
+        connection = psycopg2.connect(
+                                  host="localhost",
+                                  user="postgres",
+                                  # пароль, который указали при установке PostgreSQL
+                                  password="0",
+                                  port="5432",
+                                  database="stroi")
+    # Курсор для выполнения операций с базой данных
+        cursor = connection.cursor()
+        cursor.execute('SELECT * FROM users WHERE username=%s AND password_hash=%s', (username, password))
+        if cursor.fetchone():
+            self.window.destroy()  # Закрыть окно входа
+            self.parent.wind.deiconify()  # Показать основное окно
+        else:
+            messagebox.showerror('Ошибка', 'Неверный логин или пароль')
+        connection.close()
+
+    def register(self):
+        new_username = self.username_entry.get()
+        new_password = hash_password(self.password_entry.get())
+        if new_username and new_password:
+            try:
+                connection = psycopg2.connect(
+                                  host="localhost",
+                                  user="postgres",
+                                  # пароль, который указали при установке PostgreSQL
+                                  password="0",
+                                  port="5432",
+                                  database="stroi")
+                cursor = connection.cursor()
+                cursor.execute('INSERT INTO users (username, password_hash) VALUES (%s, %s)', (new_username, new_password))
+                connection.commit()
+                messagebox.showinfo('Успех', 'Регистрация прошла успешно')
+            except psycopg2.IntegrityError:
+                messagebox.showerror('Ошибка', 'Пользователь с таким именем уже существует')
+            finally:
+                connection.close()
+        else:
+            messagebox.showerror('Ошибка', 'Логин и пароль не могут быть пустыми')
 
 
 class Dictionary:
@@ -32,8 +74,10 @@ class Dictionary:
     a=1
     def __init__(self, window):
         
+        super().__init__()
         
         self.wind = window
+        self.wind.withdraw()  # Скрыть основное окно
         self.wind.title('Строймагазин')
         main_menu = Menu()
         file_menu = Menu()
@@ -63,6 +107,10 @@ class Dictionary:
         ttk.Button(text = 'Удалить', command = self.delete_word).grid(row = 8, column = 0, sticky = W + E)
         ttk.Button(text = 'Изменить',command=self.edit_word).grid(row = 8, column = 1, sticky = W + E)
         self.get_words()
+    def show(self):
+        ''' Показать основное окно после успешного входа '''
+        self.update()
+        self.deiconify()
     def click_mat(self):
         global a
         a = 2
