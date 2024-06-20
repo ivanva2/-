@@ -5,8 +5,20 @@ from tkinter import messagebox, Menu, ttk, Label, Entry
 from tkinter import *
 import hashlib
 from psycopg2 import Error
+from model.py import TypesOfMaterials, Materials
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 def hash_password(password):
         return hashlib.sha256(password.encode('utf-8')).hexdigest()
+engine = create_engine('postgresql://postgres:0@localhost:5432/stroi')
+Session = sessionmaker(bind=engine)
+
+
+
+
+
+
 class LoginWindow:
     def __init__(self, parent):
         self.parent = parent
@@ -72,6 +84,8 @@ class LoginWindow:
 class Dictionary:
     global a
     a=1
+    global b
+    b=2
     def __init__(self, window):
         
         super().__init__()
@@ -143,8 +157,13 @@ class Dictionary:
         
 
         
-        
-   
+    def run_query1(self, orm_class, parameters=()):
+        # Предполагается, что parameters - это словарь для фильтрации
+        result = self.session.query(orm_class).filter_by(**parameters).all()
+        return result    
+    
+    def __init__(self):
+        self.session = Session()
     def run_query(self, query,a, parameters = ()):
         connection = psycopg2.connect(
                                   host="localhost",
@@ -166,16 +185,32 @@ class Dictionary:
         for element in records:
             self.tree.delete(element)
         global a
-        if a==1:
-            query = 'SELECT * FROM typesofmaterials;'
-        if a==2:
-            query = 'SELECT * FROM materials;'
-        db_rows = self.run_query(query,TRUE)
-        for row in db_rows:
+        global b
+        if b==1:
             if a==1:
-                self.tree.insert('', 0, text = row[0], values = row[1])
+                query = 'SELECT * FROM typesofmaterials;'
             if a==2:
-                self.tree.insert('', 0, text=row[0], values=(row[1], row[2], row[3], row[4]))
+                query = 'SELECT * FROM materials;'
+            db_rows = self.run_query(query,TRUE)
+            for row in db_rows:
+                if a==1:
+                    self.tree.insert('', 0, text = row[0], values = row[1])
+                if a==2:
+                    self.tree.insert('', 0, text=row[0], values=(row[1], row[2], row[3], row[4]))
+        if b==2:
+            if a == 1:
+                db_rows = self.run_query1(TypesOfMaterials)
+                for row in db_rows:
+                    self.tree.insert('', 0, text=row.id, values=(row.name,))
+            elif a == 2:
+                db_rows = self.run_query1(Materials)
+                for row in db_rows:
+                    self.tree.insert('', 0, text=row.id, values=(row.name, row.type, row.price, row.quantity))
+    def get_words1(self):
+        # Очистка текущих записей в дереве
+
+        # Получение данных из базы данных
+        
      # валидация ввода
     def validation(self):
         return len(self.word.get()) != 0 and len(self.meaning.get()) != 0
