@@ -125,13 +125,15 @@ class Dictionary:
         self.wind.title('Строймагазин')
         main_menu = Menu()
         file_menu = Menu()
+        ormm_menu=Menu()
         self.login_window = LoginWindow(self)
-        
+        ormm_menu.add_command(label="SQL",command = lambda: self.click_SQL())
+        ormm_menu.add_command(label="ORM",command = lambda: self.click_ORM())
         file_menu.add_command(label="Вид матерьяла",command = lambda: self.click_vid())
         file_menu.add_command(label="Матерьялы",command=lambda: self.click_mat())
         file_menu.add_separator()
 
-        
+        main_menu.add_cascade(label="ORM или SQL", menu=ormm_menu)
         main_menu.add_cascade(label="таблицы", menu=file_menu)
         main_menu.add_cascade(label="новое",command = lambda: self.novoe())
         window.config(menu=main_menu)
@@ -151,6 +153,10 @@ class Dictionary:
         ttk.Button(text = 'Удалить', command = self.delete_word).grid(row = 8, column = 0, sticky = W + E)
         ttk.Button(text = 'Изменить',command=self.edit_word).grid(row = 8, column = 1, sticky = W + E)
         self.get_words()
+    def click_SQL(self):
+        Dictionary.b=1
+    def click_ORM(self):
+        Dictionary.b=2
     def show(self):
         ''' Показать основное окно после успешного входа '''
         self.update()
