@@ -435,9 +435,32 @@ class Dictionary:
             ttk.Button(frame, text = 'Сохранить', command = self.add_word).grid(row = 6, columnspan = 2, sticky = W + E)
     # внесение изменений в базу
     def edit_records(self, new_word, word, new_meaning, old_meaning):
-      
-        query = f"""UPDATE typesofmaterials SET id = {new_word}, typeofmaterial = '{new_meaning}'WHERE id = {word} AND typeofmaterial = '{old_meaning}'"""
-        self.run_query(query,False)
+        if Dictionary.b==1:
+            query = f"""UPDATE typesofmaterials SET id = {new_word}, typeofmaterial = '{new_meaning}'WHERE id = {word} AND typeofmaterial = '{old_meaning}'"""
+            self.run_query(query,False)
+            
+        elif Dictionary.b==2:      
+            session = Session()
+
+            # Получение новых значений
+            new_word_id = new_word  # Убедитесь, что new_word содержит корректное значение id
+            new_typeofmaterial = new_meaning  # Убедитесь, что new_meaning содержит новое значение для типа материала
+
+            # Получение старых значений
+            old_word_id = word  # Убедитесь, что word содержит старое значение id
+            old_typeofmaterial = old_meaning  # Убедитесь, что old_meaning содержит старое значение типа материала
+
+            # Поиск объекта по старым значениям
+            type_of_material_to_update = session.query(TypesOfMaterials).filter_by(id=old_word_id, typeofmaterial=old_typeofmaterial).first()
+
+            if type_of_material_to_update:
+    # Обновление атрибутов объекта
+                type_of_material_to_update.id = new_word_id
+                type_of_material_to_update.typeofmaterial = new_typeofmaterial
+
+    # Подтверждение изменений
+                session.commit()
+                session.close()
         self.edit_wind.destroy()
         self.message['text'] = 'слово {} успешно изменено'.format(word)
         self.get_words()
@@ -464,9 +487,33 @@ class Dictionary:
             if Dictionary.a==2:
                 self.tree.insert('', 0, text=row[0], values=(row[1], row[2], row[3], row[4]))
     def edit_records1(self, new_id, old_id, new_size, old_size, new_characteristic, old_characteristic, new_quantity, old_quantity, new_material_type, old_material_type):
-        
-        query = f"""UPDATE  materials SET id = {new_id}, size = '{new_size}', characteristic='{new_characteristic}',quantity ={new_quantity}, material_id ={new_material_type} WHERE id = {old_id}"""
-        self.run_query(query,False)
+        if Dictionary.b==1:
+            query = f"""UPDATE  materials SET id = {new_id}, size = '{new_size}', characteristic='{new_characteristic}',quantity ={new_quantity}, material_id ={new_material_type} WHERE id = {old_id}"""
+            self.run_query(query,False)
+        elif Dictionary.b==2:
+            session = Session()
+
+
+            old_id_value = old_id  
+            new_id_value = new_id  
+            new_size_value = new_size  
+
+
+            material_to_update = session.query(Material).filter_by(id=old_id_value).first()
+
+            if material_to_update:
+                # Обновление атрибутов объекта
+                material_to_update.id = new_id_value
+                material_to_update.size = new_size_value
+                material_to_update.characteristic = new_characteristic
+                material_to_update.quantity = new_quantity
+                material_to_update.material_id = new_material_type
+
+    # Подтверждение изменений
+            session.commit()
+
+            # Закрытие сессии
+            session.close()
         self.edit_wind.destroy()
         self.message['text'] = 'мательял {} успешно изменен'.format(new_characteristic)
         self.get_words()
