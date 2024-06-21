@@ -441,15 +441,11 @@ class Dictionary:
             
         elif Dictionary.b==2:      
             session = Session()
-
-            # Получение новых значений
-            new_word_id = new_word  # Убедитесь, что new_word содержит корректное значение id
-            new_typeofmaterial = new_meaning  # Убедитесь, что new_meaning содержит новое значение для типа материала
-
+            new_word_id = new_word  
+            new_typeofmaterial = new_meaning  
             # Получение старых значений
-            old_word_id = word  # Убедитесь, что word содержит старое значение id
-            old_typeofmaterial = old_meaning  # Убедитесь, что old_meaning содержит старое значение типа материала
-
+            old_word_id = word  
+            old_typeofmaterial = old_meaning  
             # Поиск объекта по старым значениям
             type_of_material_to_update = session.query(TypesOfMaterials).filter_by(id=old_word_id, typeofmaterial=old_typeofmaterial).first()
 
@@ -469,23 +465,52 @@ class Dictionary:
         for element in records:
             self.tree.delete(element)
         x=self.poiskk.get()
+        if Dictionary.b==1:
+            if x.isdigit():
+                if Dictionary.a==1:
+                    query=f"""SELECT * FROM typesofmaterials WHERE id = {self.poiskk.get()}  """
+                if Dictionary.a==2:
+                    query=f"""SELECT * FROM materials WHERE id = {self.poiskk.get()} or quantity = {self.poiskk.get()} or material_id ={self.poiskk.get()}"""
+            else:
+                if Dictionary.a==1:
+                    query=f"""SELECT * FROM typesofmaterials WHERE  typeofmaterial = '{self.poiskk.get()}' """
+                if Dictionary.a==2:
+                    query=f"""SELECT * FROM materials WHERE  size  = '{self.poiskk.get()}' or characteristic= '{self.poiskk.get()}'"""
+            db_rows = self.run_query(query,TRUE)
+            for row in db_rows:
+                if Dictionary.a==1:
+                    self.tree.insert('', 0, text = row[0], values = row[1])
+                if Dictionary.a==2:
+                    self.tree.insert('', 0, text=row[0], values=(row[1], row[2], row[3], row[4]))
+        if Dictionary.b==2:
+            session = Session()
+            if x.isdigit():
+            # Поиск по id
+                if Dictionary.a == 1:
+                    results = session.query(TypesOfMaterials).filter_by(id=int(self.poiskk.get())).all()
+                elif Dictionary.a == 2:
+                    id_value = int(self.poiskk.get())
+                    results = session.query(Materials).filter((Materials.id == id_value) | 
+                                                        (Materials.quantity == id_value) | 
+                                                        (Materials.material_id == id_value)).all()
+            else:
+    # Поиск по текстовому полю
+                if Dictionary.a == 1:
+                    results = session.query(TypesOfMaterials).filter_by(typeofmaterial=self.poiskk.get()).all()
+                elif Dictionary.a == 2:
+                    search_value = self.poiskk.get()
+                    results = session.query(Materials).filter((Materials.size == search_value) | 
+                                                 (Materials.characteristic == search_value)).all()
 
-        if x.isdigit():
-            if Dictionary.a==1:
-                query=f"""SELECT * FROM typesofmaterials WHERE id = {self.poiskk.get()}  """
-            if Dictionary.a==2:
-                query=f"""SELECT * FROM materials WHERE id = {self.poiskk.get()} or quantity = {self.poiskk.get()} or material_id ={self.poiskk.get()}"""
-        else:
-            if Dictionary.a==1:
-                query=f"""SELECT * FROM typesofmaterials WHERE  typeofmaterial = '{self.poiskk.get()}' """
-            if Dictionary.a==2:
-                query=f"""SELECT * FROM materials WHERE  size  = '{self.poiskk.get()}' or characteristic= '{self.poiskk.get()}'"""
-        db_rows = self.run_query(query,TRUE)
-        for row in db_rows:
-            if Dictionary.a==1:
-                self.tree.insert('', 0, text = row[0], values = row[1])
-            if Dictionary.a==2:
-                self.tree.insert('', 0, text=row[0], values=(row[1], row[2], row[3], row[4]))
+# Вставка результатов в дерево
+            for row in results:
+                if Dictionary.a == 1:
+                    self.tree.insert('', 0, text=row.id, values=row.typeofmaterial)
+                elif Dictionary.a == 2:
+                    self.tree.insert('', 0, text=row.id, values=(row.size, row.characteristic, row.quantity, row.material_id))
+
+# Закрытие сессии
+            session.close()
     def edit_records1(self, new_id, old_id, new_size, old_size, new_characteristic, old_characteristic, new_quantity, old_quantity, new_material_type, old_material_type):
         if Dictionary.b==1:
             query = f"""UPDATE  materials SET id = {new_id}, size = '{new_size}', characteristic='{new_characteristic}',quantity ={new_quantity}, material_id ={new_material_type} WHERE id = {old_id}"""
