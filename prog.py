@@ -289,12 +289,30 @@ class Dictionary:
             return
         self.message['text'] = ''
         typeofmaterial= self.tree.item(self.tree.selection())['text']
+        if Dictionary.b==1:
+            if Dictionary.a==1:
+                query = f'DELETE FROM typesofmaterials WHERE id = {typeofmaterial}'
+            if Dictionary.a==2:
+                query = f'DELETE FROM materials WHERE id = {typeofmaterial}'
+            self.run_query(query,False, )
+        elif Dictionary.b==2:
+            session = Session()
+            if Dictionary.a == 1:
+                # Поиск и удаление типа материала по id
+                type_of_material_to_delete = session.query(TypesOfMaterials).filter_by(id=typeofmaterial).first()
+                if type_of_material_to_delete:
+                    session.delete(type_of_material_to_delete)
+            elif Dictionary.a == 2:
+                # Поиск и удаление материала по id
+                material_to_delete = session.query(Materials).filter_by(id=typeofmaterial).first()
+                if material_to_delete:
+                    session.delete(material_to_delete)
 
-        if Dictionary.a==1:
-            query = f'DELETE FROM typesofmaterials WHERE id = {typeofmaterial}'
-        if Dictionary.a==2:
-            query = f'DELETE FROM materials WHERE id = {typeofmaterial}'
-        self.run_query(query,False, )
+            # Подтверждение изменений
+            session.commit()
+
+            # Закрытие сессии
+            session.close()
         self.message['text'] = 'Слово {} успешно удалено'.format(typeofmaterial)
         self.get_words()
     # рeдактирование слова и/или значения
