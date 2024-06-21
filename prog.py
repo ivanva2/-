@@ -5,14 +5,47 @@ from tkinter import messagebox, Menu, ttk, Label, Entry
 from tkinter import *
 import hashlib
 from psycopg2 import Error
-from model.py import TypesOfMaterials, Materials
-
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+Base = declarative_base()
+
+class Materials(Base):
+    __tablename__ = 'materials'
+    
+    id = Column(Integer, primary_key=True)
+    size = Column(String(50), nullable=False)
+    characteristic = Column(String(50), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    material_id = Column(Integer, ForeignKey('typesofmaterials.id'))
+
+    # Явное указание условия соединения
+    typesofmaterials = relationship("TypesOfMaterials", back_populates="materials",
+                                    primaryjoin="Materials.material_id==TypesOfMaterials.id")
+
+    def __repr__(self):
+        return f"<Materials(size='{self.size}', characteristic='{self.characteristic}', quantity={self.quantity}, material_id={self.material_id})>"
+
+class TypesOfMaterials(Base):
+    __tablename__ = 'typesofmaterials'
+    
+    id = Column(Integer, primary_key=True)
+    typeofmaterial = Column(String(50), nullable=False)
+
+    # Определение отношения для обратной ссылки
+    materials = relationship("Materials", order_by=Materials.id, back_populates="typesofmaterials")
+
+    def __repr__(self):
+        return f"<typesofmaterials(typeofmaterial='{self.typeofmaterial}')>"
+
+
+
 def hash_password(password):
         return hashlib.sha256(password.encode('utf-8')).hexdigest()
-engine = create_engine('postgresql://postgres:0@localhost:5432/stroi')
-Session = sessionmaker(bind=engine)
+
+
 
 
 
@@ -82,14 +115,11 @@ class LoginWindow:
 
 
 class Dictionary:
-    global a
     a=1
-    global b
     b=2
     def __init__(self, window):
-        
         super().__init__()
-        
+        self.session = Session()
         self.wind = window
         self.wind.withdraw()  # Скрыть основное окно
         self.wind.title('Строймагазин')
@@ -126,8 +156,8 @@ class Dictionary:
         self.update()
         self.deiconify()
     def click_mat(self):
-        global a
-        a = 2
+
+        Dictionary.a = 2
         self.tree.destroy()
         self.tree = ttk.Treeview(height=10, columns=('размер', 'Характеристика', 'количество', 'Вид матерьяла'))
         self.tree.grid(row=7, column=0, columnspan=5)
@@ -142,8 +172,8 @@ class Dictionary:
         self.get_words()
         return a
     def click_vid(self):
-        global a
-        a = 1
+       
+        Dictionary.a = 1
         self.tree.destroy()
         self.tree = ttk.Treeview(height = 10, columns = 2)
         self.tree.grid(row = 7, column = 0, columnspan = 2)
@@ -157,13 +187,13 @@ class Dictionary:
         
 
         
-    def run_query1(self, orm_class, parameters=()):
+    def run_query1(self, orm_class, parameters={}):
         # Предполагается, что parameters - это словарь для фильтрации
         result = self.session.query(orm_class).filter_by(**parameters).all()
         return result    
     
-    def __init__(self):
-        self.session = Session()
+
+        
     def run_query(self, query,a, parameters = ()):
         connection = psycopg2.connect(
                                   host="localhost",
@@ -184,49 +214,64 @@ class Dictionary:
         records = self.tree.get_children()
         for element in records:
             self.tree.delete(element)
-        global a
-        global b
-        if b==1:
-            if a==1:
+        if Dictionary.b==1:
+            if Dictionary.a==1:
                 query = 'SELECT * FROM typesofmaterials;'
-            if a==2:
+            if Dictionary.a==2:
                 query = 'SELECT * FROM materials;'
             db_rows = self.run_query(query,TRUE)
             for row in db_rows:
-                if a==1:
+                if Dictionary.a==1:
                     self.tree.insert('', 0, text = row[0], values = row[1])
-                if a==2:
+                if Dictionary.a==2:
                     self.tree.insert('', 0, text=row[0], values=(row[1], row[2], row[3], row[4]))
-        if b==2:
-            if a == 1:
+        if Dictionary.b==2:
+            if Dictionary.a == 1:
                 db_rows = self.run_query1(TypesOfMaterials)
                 for row in db_rows:
-                    self.tree.insert('', 0, text=row.id, values=(row.name,))
-            elif a == 2:
+                    self.tree.insert('', 0, text=row.id, values=(row.typeofmaterial,))
+            elif Dictionary.a == 2:
                 db_rows = self.run_query1(Materials)
                 for row in db_rows:
-                    self.tree.insert('', 0, text=row.id, values=(row.name, row.type, row.price, row.quantity))
-    def get_words1(self):
-        # Очистка текущих записей в дереве
-
-        # Получение данных из базы данных
-        
+                    self.tree.insert('', 0, text=row.id, values=(row.size, row.characteristic, row.quantity, row.material_id ))
+    
      # валидация ввода
     def validation(self):
         return len(self.word.get()) != 0 and len(self.meaning.get()) != 0
     # добавление нового слова
     def add_word(self):
         if self.validation():
-            global a
-            if a==1:
-                query = f""" INSERT INTO typesofmaterials (id, typeofmaterial) VALUES({self.word.get()},'{self.meaning.get()}')"""
-            if a==2:
-                query = f""" INSERT INTO materials (id, size, characteristic, quantity, material_id) VALUES({self.word.get()},'{self.meaning.get()}','{self.xarkt.get()}',{self.kol.get()},{self.vidd.get()})"""
-            self.run_query(query,False)
-            self.message['text'] = 'Вид матерьяла {} добавлено в таблицу'.format(self.meaning.get())
+            if Dictionary.b==1:
+                if Dictionary.a==1:
+                    query = f""" INSERT INTO typesofmaterials (id, typeofmaterial) VALUES({self.word.get()},'{self.meaning.get()}')"""
+                if Dictionary.a==2:
+                    query = f""" INSERT INTO materials (id, size, characteristic, quantity, material_id) VALUES({self.word.get()},'{self.meaning.get()}','{self.xarkt.get()}',{self.kol.get()},{self.vidd.get()})"""
+                self.run_query(query,False)
+                self.message['text'] = 'Вид матерьяла {} добавлено в таблицу'.format(self.meaning.get())
+            if Dictionary.b==2:
+                session = Session()
+                if Dictionary.a == 2:
+                    # Добавление нового материала
+                    new_material = Materials(
+                    id=self.word.get(),
+                    size=self.meaning.get(),
+                    characteristic=self.xarkt.get(),
+                    quantity=self.kol.get(),
+                    material_id=self.vidd.get()
+                    )
+                    session.add(new_material)
+                else:
+                    # Добавление нового типа материала
+                    new_type_of_material = TypesOfMaterials(
+                    id=self.word.get(),
+                    typeofmaterial=self.meaning.get()
+                    )
+                    session.add(new_type_of_material)
+                session.commit()
+                session.close()
             self.word.delete(0, END)
             self.meaning.delete(0, END)
-            if a==2:
+            if Dictionary.a==2:
                 self.xarkt.delete(0, END)
                 self.kol.delete(0, END)
                 self.vidd.delete(0, END)
@@ -244,10 +289,10 @@ class Dictionary:
             return
         self.message['text'] = ''
         typeofmaterial= self.tree.item(self.tree.selection())['text']
-        global a
-        if a==1:
+
+        if Dictionary.a==1:
             query = f'DELETE FROM typesofmaterials WHERE id = {typeofmaterial}'
-        if a==2:
+        if Dictionary.a==2:
             query = f'DELETE FROM materials WHERE id = {typeofmaterial}'
         self.run_query(query,False, )
         self.message['text'] = 'Слово {} успешно удалено'.format(typeofmaterial)
@@ -261,8 +306,8 @@ class Dictionary:
             self.message['text'] = 'Выберите строку для изменения'
             return
         
-        global a
-        if a==1:
+
+        if Dictionary.a==1:
             word = self.tree.item(self.tree.selection())['text']
             old_meaning = self.tree.item(self.tree.selection())['values'][0]
             self.edit_wind = Toplevel()
@@ -286,7 +331,7 @@ class Dictionary:
 
             Button(self.edit_wind, text = 'Изменить', command = lambda: self.edit_records(new_word.get(), word, new_meaning.get(), old_meaning)).grid(row = 4, column = 2, sticky = W)
             self.edit_wind.mainloop()
-        if a==2:
+        if Dictionary.a==2:
             # Прежние значения
             selected_item = self.tree.selection()[0]  # Предполагается, что выбран один элемент
             word = self.tree.item(selected_item)['text']
@@ -337,8 +382,8 @@ class Dictionary:
         self.message['text'] = ''
         self.edit_wind = Toplevel()
         self.edit_wind.title = 'Добавить новое значение'
-        global a
-        if a==1:
+
+        if Dictionary.a==1:
 
             frame = LabelFrame(self.edit_wind, text = 'Введите новый вид матерьяла')
             frame.grid(row = 0, column = 0, columnspan = 3, pady = 20)
@@ -350,7 +395,7 @@ class Dictionary:
             self.meaning = Entry(frame)
             self.meaning.grid(row = 2, column = 1)
             ttk.Button(frame, text = 'Сохранить', command = self.add_word).grid(row = 3, columnspan = 2, sticky = W + E)
-        if a==2:
+        if Dictionary.a==2:
             frame = LabelFrame(self.edit_wind, text = 'Введите новый вид матерьяла')
             frame.grid(row = 0, column = 0, columnspan = 3, pady = 20)
             Label(frame, text = 'id: ').grid(row = 1, column = 0)
@@ -383,22 +428,22 @@ class Dictionary:
         for element in records:
             self.tree.delete(element)
         x=self.poiskk.get()
-        global a 
+
         if x.isdigit():
-            if a==1:
+            if Dictionary.a==1:
                 query=f"""SELECT * FROM typesofmaterials WHERE id = {self.poiskk.get()}  """
-            if a==2:
+            if Dictionary.a==2:
                 query=f"""SELECT * FROM materials WHERE id = {self.poiskk.get()} or quantity = {self.poiskk.get()} or material_id ={self.poiskk.get()}"""
         else:
-            if a==1:
+            if Dictionary.a==1:
                 query=f"""SELECT * FROM typesofmaterials WHERE  typeofmaterial = '{self.poiskk.get()}' """
-            if a==2:
+            if Dictionary.a==2:
                 query=f"""SELECT * FROM materials WHERE  size  = '{self.poiskk.get()}' or characteristic= '{self.poiskk.get()}'"""
         db_rows = self.run_query(query,TRUE)
         for row in db_rows:
-            if a==1:
+            if Dictionary.a==1:
                 self.tree.insert('', 0, text = row[0], values = row[1])
-            if a==2:
+            if Dictionary.a==2:
                 self.tree.insert('', 0, text=row[0], values=(row[1], row[2], row[3], row[4]))
     def edit_records1(self, new_id, old_id, new_size, old_size, new_characteristic, old_characteristic, new_quantity, old_quantity, new_material_type, old_material_type):
         
@@ -411,6 +456,8 @@ class Dictionary:
 
         
 if __name__ == '__main__':
+    engine = create_engine('postgresql://postgres:0@localhost:5432/stroi')
+    Session = sessionmaker(bind=engine)
     window = Tk()
     application = Dictionary(window)
     window.mainloop()
